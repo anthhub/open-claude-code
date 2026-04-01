@@ -20,13 +20,19 @@
     "ch9:agent": "bun run examples/09-agent-coordination/multi-agent.ts",
     "ch10:skill": "bun run examples/10-plugin-skill-system/custom-skill.ts",
     "ch11:context": "bun run examples/11-state-context/context-manager.ts",
-    "ch12:sandbox": "bun run examples/12-advanced-features/sandbox.ts"
+    "ch12:sandbox": "bun run examples/12-advanced-features/sandbox.ts",
+    "demo": "cd demo && bun run main.ts",
+    "demo:typecheck": "cd demo && bun run typecheck",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "keywords": ["claude-code", "anthropic", "cli", "architecture", "learning"],
   "license": "MIT",
   "devDependencies": {
     "@types/bun": "^1.3.11",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitepress": "^1.6.4"
   },
   "dependencies": {
     "commander": "^14.0.3"

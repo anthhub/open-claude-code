@@ -12,8 +12,9 @@
 4. [Directory Structure Walkthrough](#4-directory-structure-walkthrough)
 5. [Key Design Patterns](#5-key-design-patterns)
 6. [Data Flow: From User Input to Response](#6-data-flow-from-user-input-to-response)
-7. [Hands-on Exercises](#7-hands-on-exercises)
-8. [What's Next](#8-whats-next)
+7. [Hands-on Build: mini-claude Scaffolding](#7-hands-on-build-mini-claude-scaffolding)
+8. [Source Code Exercises](#8-source-code-exercises)
+9. [What's Next](#9-whats-next)
 
 ---
 
@@ -634,7 +635,106 @@ Each of those steps is one iteration of the loop.
 
 ---
 
-## 7. Hands-on Exercises
+## 7. Hands-on Build: mini-claude Scaffolding
+
+Starting from this chapter, you'll build `mini-claude` — a working AI coding assistant that mirrors the real Claude Code architecture. Each chapter adds a new module. By the end, you'll have a fully functional CLI AI assistant.
+
+**This chapter's goal:** Set up the project scaffolding and define the core type system. The demo should pass TypeScript compilation.
+
+### 7.1 Initialize the Project
+
+```bash
+cd demo
+bun install
+```
+
+Project structure after this chapter:
+
+```
+demo/
+├── main.ts              # Entry point (currently: type validation)
+├── package.json
+├── tsconfig.json
+└── types/
+    ├── index.ts          # Unified type exports
+    ├── message.ts        # Message & content block types
+    ├── tool.ts           # Tool interface types
+    ├── permissions.ts    # Permission types
+    └── config.ts         # Configuration types
+```
+
+### 7.2 Message Types: The Data Foundation
+
+Open `demo/types/message.ts`. This is the data foundation of the entire system.
+
+**Core Design: Discriminated Unions**
+
+Claude Code's message system uses TypeScript discriminated unions — the `type` field distinguishes different message and content block types:
+
+```typescript
+// Content blocks: individual "pieces" of an AI response
+export type ContentBlock = TextBlock | ToolUseBlock | ToolResultBlock;
+
+// Messages: individual entries in conversation history
+export type Message = UserMessage | AssistantMessage | SystemMessage;
+```
+
+**StopReason Controls the Agentic Loop**
+
+```typescript
+export type StopReason = "end_turn" | "tool_use" | "max_tokens";
+```
+
+- `end_turn`: AI considers the task complete → loop exits
+- `tool_use`: AI needs a tool → wait for result, continue loop
+- `max_tokens`: Output hit length limit → may need to continue
+
+### 7.3 Tool Types: Abstracting Capabilities
+
+Open `demo/types/tool.ts`. The Tool interface is Claude Code's most important abstraction:
+
+```typescript
+export interface Tool {
+  name: string;            // AI references tools by name
+  description: string;     // Tells AI when to use this tool
+  inputSchema: JSONSchema; // Parameter format (sent to API)
+  call(input): Promise<ToolResult>;  // Execution logic
+  isReadOnly?: boolean;    // Affects concurrency strategy
+}
+```
+
+The `isReadOnly` flag directly affects tool orchestration: read-only tools run concurrently, write tools run serially.
+
+### 7.4 Permission Types: Safety Foundation
+
+Open `demo/types/permissions.ts`. Three core permission behaviors:
+
+```typescript
+export type PermissionBehavior = "allow" | "deny" | "ask";
+```
+
+Every tool call is checked before execution: allow (proceed), deny (reject with message to AI), or ask (prompt the user).
+
+### 7.5 Verify the Type System
+
+```bash
+cd demo
+bun run typecheck   # TypeScript type checking
+bun run main.ts     # Run entry file to verify at runtime
+```
+
+### 7.6 Mapping to Real Claude Code
+
+| Demo File | Real Claude Code | What's Simplified |
+|-----------|-----------------|-------------------|
+| `types/message.ts` | `src/types/message.ts` | Omits ProgressMessage, AttachmentMessage, TombstoneMessage |
+| `types/tool.ts` | `src/Tool.ts` | From 30+ fields to 5 core fields, no Zod validation |
+| `types/permissions.ts` | `src/types/permissions.ts` | Omits ML classifier, additional working directories |
+| `types/config.ts` | Spread across many files | Unified into a single config object |
+
+---
+
+## 8. Source Code Exercises
 
 The best way to internalize this chapter is to explore the codebase directly.
 
@@ -686,19 +786,26 @@ Find all uses of `feature('...')` in the codebase and compile:
 
 ---
 
-## 8. What's Next
+## 9. What's Next
 
-In **Chapter 2: CLI Entrypoint & Startup Sequence**, you'll zoom in on exactly what happens in the first 50 milliseconds after a user runs `claude`.
+This chapter accomplished two things:
 
-You'll learn:
-- How Commander.js is configured and how arguments flow into the application
-- The precise order of initialization in `main.tsx` and `bootstrap/state.ts`
-- How the parallel prefetch pattern is implemented in detail
-- The React render root setup and how Ink takes over stdout
-- How the application detects its environment (TTY vs pipe, CI vs interactive)
+1. **Understanding the big picture:** Claude Code's tech stack, six-layer architecture, design patterns, and data flow
+2. **Building the scaffolding:** Created the mini-claude project with message, tool, and permission type definitions
 
-The startup sequence is a masterclass in performance-conscious initialization, and understanding it will set you up to read the rest of the codebase with confidence.
+**Chapter 2: Tool Interface & Tool Registry**
+
+With the type foundation in place, the next step is making tools "come alive":
+
+- Implement `Tool.ts` — the `buildTool()` factory function
+- Implement `tools.ts` — the tool registry
+- Create the first real tools: BashTool, FileReadTool, GrepTool
+- Make tools actually execute commands, read files, and search code
+
+After Chapter 2, your mini-claude will have real "hands" to work with.
 
 ---
 
 *Chapter 1 of the Learn Claude Code series. Source repository: [anthhub/claude-code](https://github.com/anthhub/claude-code)*
+
+*Demo code for this chapter: `demo/types/` directory*

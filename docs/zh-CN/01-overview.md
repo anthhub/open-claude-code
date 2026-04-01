@@ -13,8 +13,9 @@
 4. [目录结构全景](#4-目录结构全景)
 5. [核心设计模式](#5-核心设计模式)
 6. [数据流：从用户输入到响应](#6-数据流从用户输入到响应)
-7. [动手练习](#7-动手练习)
-8. [下一章预告](#8-下一章预告)
+7. [动手构建：mini-claude 脚手架](#7-动手构建mini-claude-脚手架)
+8. [源码阅读练习](#8-源码阅读练习)
+9. [下一章预告](#9-下一章预告)
 
 ---
 
@@ -618,7 +619,187 @@ messages = [
 
 ---
 
-## 7. 动手练习
+## 7. 动手构建：mini-claude 脚手架
+
+从本章开始，我们动手构建 `mini-claude`——一个与 Claude Code 真实架构对应的可运行 AI 编程助手。每一章都会新增一个模块，到教程结束时你会拥有一个功能完整的 CLI AI 助手。
+
+**本章目标**：搭建项目脚手架，定义核心类型系统。完成后 demo 可通过 TypeScript 编译。
+
+### 7.1 初始化项目
+
+```bash
+cd demo
+bun install
+```
+
+项目结构如下：
+
+```
+demo/
+├── main.ts              # 入口文件（当前：类型验证）
+├── package.json
+├── tsconfig.json
+└── types/
+    ├── index.ts          # 类型统一导出
+    ├── message.ts        # 消息与内容块类型
+    ├── tool.ts           # 工具接口类型
+    ├── permissions.ts    # 权限类型
+    └── config.ts         # 配置类型
+```
+
+### 7.2 消息类型：数据流的基础
+
+打开 `demo/types/message.ts`，这是整个系统的数据基础。
+
+**核心设计：Discriminated Union（可区分联合类型）**
+
+Claude Code 的消息系统使用 TypeScript 的 discriminated union 模式——通过 `type` 字段区分不同的消息类型和内容块类型：
+
+```typescript
+// 内容块：AI 回复中的每个"片段"
+export type ContentBlock = TextBlock | ToolUseBlock | ToolResultBlock;
+
+// 消息：对话历史的每一条记录
+export type Message = UserMessage | AssistantMessage | SystemMessage;
+```
+
+这个模式的好处是 TypeScript 可以自动收窄类型：
+
+```typescript
+function processBlock(block: ContentBlock) {
+  switch (block.type) {
+    case "text":
+      // TypeScript 知道这里 block 是 TextBlock
+      console.log(block.text);
+      break;
+    case "tool_use":
+      // TypeScript 知道这里 block 是 ToolUseBlock
+      console.log(block.name, block.input);
+      break;
+    case "tool_result":
+      // TypeScript 知道这里 block 是 ToolResultBlock
+      console.log(block.content, block.is_error);
+      break;
+  }
+}
+```
+
+**与 Anthropic API 的对应关系**
+
+我们的类型直接映射到 [Anthropic Messages API](https://docs.anthropic.com/en/api/messages) 的消息格式：
+
+| mini-claude 类型 | API 概念 | 说明 |
+|-----------------|---------|------|
+| `TextBlock` | `content_block` (text) | AI 生成的文字 |
+| `ToolUseBlock` | `content_block` (tool_use) | AI 决定调用工具 |
+| `ToolResultBlock` | `tool_result` | 工具执行结果，作为 user 消息发回 |
+| `UserMessage` | `role: "user"` | 用户输入 + 工具结果 |
+| `AssistantMessage` | `role: "assistant"` | AI 的回复 |
+| `StopReason` | `stop_reason` | 为什么 AI 停止了输出 |
+
+**StopReason 是 Agentic Loop 的控制信号**
+
+```typescript
+export type StopReason = "end_turn" | "tool_use" | "max_tokens";
+```
+
+- `end_turn`：AI 认为任务完成，循环结束
+- `tool_use`：AI 需要调用工具，等待结果后继续循环
+- `max_tokens`：输出达到长度限制，可能需要继续
+
+这三个值决定了 QueryEngine 在每次 API 调用后的行为——是继续循环还是停止。
+
+### 7.3 工具类型：能力的抽象
+
+打开 `demo/types/tool.ts`，这里定义了 Tool 接口——Claude Code 最核心的抽象。
+
+```typescript
+export interface Tool {
+  name: string;            // AI 用此名称引用工具
+  description: string;     // 告诉 AI 何时使用此工具
+  inputSchema: JSONSchema; // 参数格式（发给 API）
+  call(input): Promise<ToolResult>;  // 实际执行逻辑
+  isReadOnly?: boolean;    // 影响并发策略
+}
+```
+
+**为什么用 JSON Schema？**
+
+Anthropic API 要求用 JSON Schema 描述工具参数。AI 根据 Schema 生成结构化的参数 JSON，然后我们解析并执行。这就是为什么真实 Claude Code 使用 Zod——Zod 同时提供 TypeScript 类型安全和运行时 JSON Schema 校验。
+
+我们的简化版直接用 JSON Schema 类型定义，省略了 Zod 的运行时校验（后续章节会添加）。
+
+**isReadOnly 的意义**
+
+这个标志不只是文档——它直接影响工具编排策略：
+- `isReadOnly: true`（如 FileRead、Grep）→ 可以并发执行
+- `isReadOnly: false`（如 Bash、FileWrite）→ 必须串行执行
+
+真实 Claude Code 中，并发执行只读工具是一个重要的性能优化。
+
+### 7.4 权限类型：安全的基础
+
+打开 `demo/types/permissions.ts`。权限系统确保 AI 不会随意执行危险操作。
+
+核心概念是三种权限行为：
+
+```typescript
+export type PermissionBehavior = "allow" | "deny" | "ask";
+```
+
+每次工具调用前，权限检查器根据规则决定行为：
+
+```
+工具调用 → 匹配规则 → allow（直接执行）
+                    → deny（拒绝并告知 AI）
+                    → ask（显示确认对话框给用户）
+```
+
+权限模式（`PermissionMode`）控制默认的严格程度。真实 Claude Code 有更复杂的模式（如 `auto` 模式使用 ML 分类器自动判断 bash 命令安全性），我们先实现核心三种。
+
+### 7.5 验证类型系统
+
+运行以下命令，确认一切正常：
+
+```bash
+# TypeScript 类型检查
+cd demo
+bun run typecheck
+
+# 运行入口文件，验证类型在运行时也能正常工作
+bun run main.ts
+```
+
+你应该看到类似输出：
+
+```
+mini-claude - 类型系统验证
+========================================
+消息历史: 2 条
+  用户消息: "帮我看一下 main.ts 的内容"
+  助手消息: 2 个内容块
+  工具调用: 1 个
+    → Read({"file_path":"main.ts"})
+注册工具: Read
+  描述: 读取文件内容
+  ...
+类型系统验证通过！
+```
+
+### 7.6 与真实 Claude Code 的对应关系
+
+| demo 文件 | 真实 Claude Code 对应 | 简化了什么 |
+|-----------|---------------------|-----------|
+| `types/message.ts` | `src/types/message.ts` | 省略了 ProgressMessage、AttachmentMessage、TombstoneMessage 等 |
+| `types/tool.ts` | `src/Tool.ts` | 从 30+ 字段简化为 5 个核心字段，省略了 Zod 校验 |
+| `types/permissions.ts` | `src/types/permissions.ts` | 省略了 ML 分类器、附加工作目录等高级功能 |
+| `types/config.ts` | 分散在多处 | 统一为单一配置对象 |
+
+这些简化都是有意的——每个被省略的功能都会在后续章节按需添加。
+
+---
+
+## 8. 源码阅读练习
 
 完成以下练习，加深对项目结构的理解。
 
@@ -670,24 +851,28 @@ grep -r "feature(" src/ --include="*.ts" --include="*.tsx" | \
 
 ---
 
-## 8. 下一章预告
+## 9. 下一章预告
 
-本章我们从宏观角度了解了 Claude Code 的全貌：它是什么、用了哪些技术、整体架构如何分层、以及几个重要的设计模式。
+本章我们完成了两件事：
 
-**第二章：CLI 入口与启动流程**
+1. **理解全貌**：Claude Code 的技术栈、六层架构、核心设计模式、数据流
+2. **搭建脚手架**：创建了 mini-claude 项目，定义了消息、工具、权限三套核心类型
 
-我们将深入 `entrypoints/` 和 `main.tsx`，追踪程序从用户在终端输入 `claude` 到第一个 UI 组件渲染出来的完整过程：
+**第二章：Tool 接口实现与工具注册表**
 
-- Commander.js 如何解析 CLI 参数
-- 程序如何决定运行模式（交互 vs 管道 vs MCP Server）
-- `main.tsx` 如何启动 React 渲染树
-- 并行预取的完整实现细节
-- 启动时的配置加载顺序
+有了类型基础，下一步是让工具"活起来"。我们将：
 
-如果你对"一个程序是怎么从 `main()` 一步步启动起来的"感兴趣，下一章会有很多收获。
+- 实现 `Tool.ts`——工具的工厂函数 `buildTool()`
+- 实现 `tools.ts`——工具注册表
+- 创建第一批真实工具：BashTool、FileReadTool、GrepTool
+- 让工具可以实际执行命令、读取文件、搜索代码
+
+完成第二章后，你的 mini-claude 将拥有真正的"动手能力"。
 
 ---
 
 *本章对应源码：`src/main.tsx`、`src/QueryEngine.ts`、`src/Tool.ts`、`src/tools.ts`、`src/commands.ts`*
+
+*本章 demo 代码：`demo/types/` 目录*
 
 *难度等级：⭐ 入门 | 下一章难度：⭐⭐ 初级*

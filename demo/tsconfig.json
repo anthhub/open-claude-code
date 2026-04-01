@@ -8,8 +8,10 @@
     "skipLibCheck": true,
     "outDir": "dist",
     "rootDir": ".",
-    "types": ["@types/bun"]
+    "types": ["@types/bun"],
+    "jsx": "react-jsx",
+    "jsxImportSource": "react"
   },
-  "include": ["examples/**/*.ts", "examples/**/*.tsx", "demo/**/*.ts", "demo/**/*.tsx"],
+  "include": ["**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules", "dist"]
 }

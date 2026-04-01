@@ -27,6 +27,15 @@ bun.lockb
 package-lock.json
 yarn.lock
 
+# Demo dependencies (users install locally)
+demo/node_modules/
+demo/bun.lock
+demo/dist/
+
+# VitePress
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+
 # OS
 .DS_Store
 .DS_Store?
