@@ -4,6 +4,14 @@ export default defineConfig({
   title: "Learn Claude Code",
   description: "深入理解 Claude Code 架构与实现的实战指南",
 
+  head: [
+    ["link", { rel: "icon", type: "image/svg+xml", href: "/learn-claude-code/logo.svg" }],
+    ["meta", { property: "og:type", content: "website" }],
+    ["meta", { property: "og:title", content: "Learn Claude Code" }],
+    ["meta", { property: "og:description", content: "深入理解 Claude Code 架构与实现的实战指南" }],
+  ],
+  lastUpdated: true,
+
   base: "/learn-claude-code/",
 
   locales: {
@@ -113,6 +121,8 @@ export default defineConfig({
             "https://github.com/anthhub/learn-claude-code/edit/main/docs/:path",
           text: "Edit this page on GitHub",
         },
+        outline: { label: "On this page" },
+        docFooter: { prev: "Previous", next: "Next" },
       },
     },
   },

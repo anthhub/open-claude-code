@@ -647,6 +647,13 @@ demo/
     └── config.ts         # 配置类型
 ```
 
+**关键配置说明：**
+
+- `package.json` 中设置 `"type": "module"` 启用 ESModule。Bun 原生支持 ESModule，这也是 Node.js 生态的未来方向。
+- `tsconfig.json` 中 `module` 设为 `"ESNext"`，配合 `moduleResolution: "bundler"`，让 TypeScript 理解 Bun 的模块解析方式。
+- `strict: true` 开启 TypeScript 严格模式——这与真实 Claude Code 的配置一致。严格模式消除了隐式 `any`，强制处理 `null`/`undefined`，虽然初期会多写一些类型注解，但能在编译期捕获大量潜在 bug。
+- `target` 设为 `"ESNext"` 因为 Bun 直接运行 TypeScript，无需降级编译，可以使用最新的 JavaScript 语法特性。
+
 ### 7.2 消息类型：数据流的基础
 
 打开 `demo/types/message.ts`，这是整个系统的数据基础。
@@ -786,6 +793,14 @@ mini-claude - 类型系统验证
 类型系统验证通过！
 ```
 
+### 常见问题
+
+**Q: `Cannot find module './types/index.js'`**
+A: 确保你在 `demo/` 目录下运行了 `bun install`。Bun 直接运行 TypeScript，`.js` 后缀是 ESModule 的标准导入方式。
+
+**Q: 类型检查报错 `Type 'xxx' is not assignable`**
+A: 检查 `tsconfig.json` 中是否开启了 `strict: true`。严格模式下 TypeScript 不允许隐式 any。
+
 ### 7.6 与真实 Claude Code 的对应关系
 
 | demo 文件 | 真实 Claude Code 对应 | 简化了什么 |
@@ -862,12 +877,12 @@ grep -r "feature(" src/ --include="*.ts" --include="*.tsx" | \
 
 有了类型基础，下一步是让工具"活起来"。我们将：
 
-- 实现 `Tool.ts`——工具的工厂函数 `buildTool()`
-- 实现 `tools.ts`——工具注册表
-- 创建第一批真实工具：BashTool、FileReadTool、GrepTool
-- 让工具可以实际执行命令、读取文件、搜索代码
+- 实现 `buildTool()` 工厂函数——用最少的代码定义新工具
+- 创建工具注册表——管理所有可用工具，支持按名称查找
+- 实现三个真实工具：**BashTool**（执行 shell 命令）、**FileReadTool**（读取文件）、**GrepTool**（搜索代码）
+- 实现 `toolToAPIFormat()` 将工具转换为 Anthropic API 格式
 
-完成第二章后，你的 mini-claude 将拥有真正的"动手能力"。
+完成第二章后，运行 `bun run main.ts` 你将看到工具实际执行命令并返回结果。
 
 ---
 

@@ -663,6 +663,13 @@ demo/
     └── config.ts         # Configuration types
 ```
 
+**Key Configuration Choices:**
+
+- `package.json` sets `"type": "module"` to enable ESModules. Bun natively supports ESModules, which is also the future direction of the Node.js ecosystem.
+- `tsconfig.json` sets `module` to `"ESNext"` with `moduleResolution: "bundler"`, so TypeScript understands Bun's module resolution strategy.
+- `strict: true` enables TypeScript strict mode — matching the real Claude Code configuration. Strict mode eliminates implicit `any` and enforces `null`/`undefined` handling. While it requires more type annotations upfront, it catches a large class of bugs at compile time.
+- `target` is set to `"ESNext"` because Bun runs TypeScript directly without downlevel compilation, allowing use of the latest JavaScript syntax features.
+
 ### 7.2 Message Types: The Data Foundation
 
 Open `demo/types/message.ts`. This is the data foundation of the entire system.
@@ -722,6 +729,14 @@ cd demo
 bun run typecheck   # TypeScript type checking
 bun run main.ts     # Run entry file to verify at runtime
 ```
+
+### Common Issues
+
+**Q: `Cannot find module './types/index.js'`**
+A: Make sure you ran `bun install` inside the `demo/` directory. Bun runs TypeScript directly — the `.js` extension is the standard ESModule import convention.
+
+**Q: Type checking errors like `Type 'xxx' is not assignable`**
+A: Verify that `tsconfig.json` has `strict: true` enabled. In strict mode, TypeScript disallows implicit `any`.
 
 ### 7.6 Mapping to Real Claude Code
 
@@ -797,12 +812,12 @@ This chapter accomplished two things:
 
 With the type foundation in place, the next step is making tools "come alive":
 
-- Implement `Tool.ts` — the `buildTool()` factory function
-- Implement `tools.ts` — the tool registry
-- Create the first real tools: BashTool, FileReadTool, GrepTool
-- Make tools actually execute commands, read files, and search code
+- Implement the `buildTool()` factory function — define new tools with minimal code
+- Create a tool registry — manage all available tools with name-based lookup
+- Implement three real tools: **BashTool** (execute shell commands), **FileReadTool** (read files), **GrepTool** (search code)
+- Implement `toolToAPIFormat()` to convert tools into Anthropic API format
 
-After Chapter 2, your mini-claude will have real "hands" to work with.
+After completing Chapter 2, run `bun run main.ts` and you'll see tools actually executing commands and returning results.
 
 ---
 

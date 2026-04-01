@@ -24,6 +24,8 @@ Claude Code is more than a chatbot wrapper. It's a full-featured terminal applic
 
 Understanding its source is a masterclass in building production-grade AI applications.
 
+**Build as you learn.** This isn't just documentation — it's a progressive tutorial. Starting from Chapter 1, you'll build `mini-claude`, a working clone of Claude Code. Each chapter adds a new module to the demo. By Chapter 12, you'll have a fully functional AI coding assistant with tools, permissions, terminal UI, and more.
+
 ---
 
 ## Learning Roadmap
@@ -42,6 +44,87 @@ Understanding its source is a masterclass in building production-grade AI applic
 | 10 | [Plugin & Skill System](docs/en/10-plugin-skill-system.md) | Advanced | Plugin loading, skill definition, extensibility |
 | 11 | [State Management & Context](docs/en/11-state-context.md) | Advanced | State store, context compression, memory |
 | 12 | [Advanced Features](docs/en/12-advanced-features.md) | Expert | Sandbox, voice, bridge/IDE, remote execution |
+
+---
+
+## The Demo: mini-claude
+
+As you read each chapter, you'll build `mini-claude` — a working AI coding assistant that mirrors Claude Code's real architecture. The demo lives in the `demo/` directory and grows chapter by chapter.
+
+### Final Architecture
+
+```
+demo/
+├── main.ts                    # CLI entry (Commander.js)
+├── context.ts                 # System prompt builder
+├── query.ts                   # Query loop (stream + tool calls)
+├── Tool.ts                    # Tool interface & factory
+├── tools.ts                   # Tool registry
+├── types/
+│   ├── message.ts             # Message types
+│   └── permissions.ts         # Permission types
+├── tools/
+│   ├── BashTool/
+│   ├── FileReadTool/
+│   ├── FileWriteTool/
+│   ├── FileEditTool/
+│   ├── GrepTool/
+│   ├── GlobTool/
+│   └── TodoWriteTool/
+├── services/
+│   ├── api/claude.ts          # Anthropic SDK wrapper
+│   └── compact/compact.ts     # Context compression
+├── screens/REPL.tsx           # Terminal UI (Ink)
+├── components/
+│   ├── App.tsx
+│   ├── MessageList.tsx
+│   └── PermissionRequest.tsx
+├── commands/
+│   ├── clear.ts
+│   ├── help.ts
+│   └── compact.ts
+└── utils/
+    ├── permissions.ts
+    ├── messages.ts
+    ├── format.ts
+    └── config.ts
+```
+
+### What You Build Each Chapter
+
+| Ch | Module Added | Demo Capability After |
+|----|-------------|----------------------|
+| 1 | Project scaffold + type system | Type definitions compile |
+| 2 | Tool.ts + tools.ts | Tool interface & registry |
+| 3 | services/api/ + context.ts | Streaming API calls |
+| 4 | query.ts + utils/messages.ts | Multi-turn tool-calling loop |
+| 5 | tools/BashTool, FileReadTool, GrepTool | Execute commands, read files, search |
+| 6 | tools/FileWriteTool, FileEditTool, GlobTool | Full file operations |
+| 7 | utils/permissions.ts | Dangerous command blocking |
+| 8 | screens/REPL.tsx + components/ | Interactive terminal UI |
+| 9 | main.ts (Commander.js) | Full CLI with args |
+| 10 | commands/ + compact service | /help, /clear, /compact |
+| 11 | components/PermissionRequest.tsx | Interactive permission dialogs |
+| 12 | History, retry, error handling | Production-ready demo |
+
+### Key Milestones
+
+- **After Chapter 2**: Tools can actually execute shell commands and read files
+- **After Chapter 4**: Complete Agentic Loop — AI automatically calls tools and reasons in a loop
+- **After Chapter 8**: Interactive terminal UI, experience close to real Claude Code
+- **After Chapter 12**: Fully functional AI coding assistant
+
+### Architecture Correspondence
+
+| Demo File | Real Claude Code Equivalent |
+|-----------|----------------------------|
+| `Tool.ts` | `src/Tool.ts` |
+| `tools.ts` | `src/tools/index.ts` |
+| `query.ts` | `src/query.ts` |
+| `context.ts` | `src/context.ts` |
+| `services/api/claude.ts` | `src/services/claude.ts` |
+| `screens/REPL.tsx` | `src/screens/REPL.tsx` |
+| `utils/permissions.ts` | `src/utils/permissions.ts` |
 
 ---
 
@@ -115,6 +198,11 @@ learn-claude-code/
 │   │   └── dependency-graph.ts
 │   ├── 02-cli-entrypoint/
 │   └── ...
+├── demo/                   # mini-claude: the progressive demo you build
+│   ├── main.ts
+│   ├── query.ts
+│   ├── Tool.ts
+│   └── ...
 └── diagrams/               # Architecture diagrams
 ```
 
@@ -148,6 +236,11 @@ bun run ch1:structure
 
 # Or run any example directly
 bun run examples/01-overview/project-structure.ts
+
+# Run the demo (after completing chapters)
+cd demo
+bun install
+bun run main.ts
 ```
 
 Then open [docs/en/01-overview.md](docs/en/01-overview.md) and follow along.

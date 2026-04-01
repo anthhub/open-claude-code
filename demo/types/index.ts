@@ -31,6 +31,7 @@ export {
 // 工具类型
 export type {
   Tool,
+  ToolCategory,
   JSONSchema,
   JSONSchemaProperty,
   ToolRegistry,
@@ -48,10 +49,11 @@ export type {
   PermissionAskDecision,
   PermissionDecision,
   PermissionRule,
+  PermissionRuleSource,
   PermissionContext,
   CheckPermissionFn,
 } from "./permissions.js";
 
 // 配置类型
 export type { AppConfig } from "./config.js";
-export { DEFAULT_CONFIG } from "./config.js";
+export { DEFAULT_MODEL, DEFAULT_CONFIG } from "./config.js";

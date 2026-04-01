@@ -73,6 +73,14 @@ export type PermissionDecision =
 // ─── 权限规则 ───────────────────────────────────────────────────────────────
 
 /**
+ * 权限规则来源
+ *
+ * 真实 Claude Code 中，权限规则可以来自多个来源，
+ * source 字段用于溯源和优先级判断
+ */
+export type PermissionRuleSource = "userSettings" | "projectSettings" | "session" | "default";
+
+/**
  * 权限规则 - 预定义的权限判断规则
  *
  * 例如：
@@ -89,6 +97,8 @@ export interface PermissionRule {
   behavior: PermissionBehavior;
   /** 规则说明 */
   reason?: string;
+  /** 规则来源，用于溯源和优先级判断 */
+  source?: PermissionRuleSource;
 }
 
 // ─── 权限上下文 ──────────────────────────────────────────────────────────────

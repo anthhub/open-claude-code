@@ -14,6 +14,17 @@
 
 import type { ToolResult } from "./message.js";
 
+// ─── 工具分类 ───────────────────────────────────────────────────────────────
+
+/**
+ * 工具分类
+ *
+ * builtin: 内置工具（如 Bash、FileRead）
+ * mcp: 通过 MCP 协议桥接的外部工具
+ * skill: 通过技能系统加载的工具
+ */
+export type ToolCategory = "builtin" | "mcp" | "skill";
+
 // ─── 工具接口 ───────────────────────────────────────────────────────────────
 
 /**
@@ -56,6 +67,9 @@ export interface Tool {
    * @returns 工具执行结果
    */
   call(input: Record<string, unknown>): Promise<ToolResult>;
+
+  /** 工具分类，默认 builtin */
+  category?: ToolCategory;
 
   /**
    * 是否为只读操作

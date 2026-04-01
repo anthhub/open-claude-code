@@ -2,8 +2,9 @@
   "name": "Learn Claude Code",
   "image": "mcr.microsoft.com/devcontainers/typescript-node:22",
   "features": {
-    "ghcr.io/anthropics/devcontainer-features/bun:1": {},
-    "ghcr.io/anthropics/devcontainer-features/deno:1": {}
+    "ghcr.io/devcontainers/features/node:1": { "version": "22" },
+    "ghcr.io/shyim/devcontainers-features/bun:0": {},
+    "ghcr.io/nicklasxyz/devcontainer-features/deno:1": {}
   },
   "postCreateCommand": "bun install && cd demo && bun install",
   "customizations": {

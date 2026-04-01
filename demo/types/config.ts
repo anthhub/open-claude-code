@@ -37,11 +37,14 @@ export interface AppConfig {
   systemPrompt?: string;
 }
 
+/** 默认模型 ID — 更新模型时只需修改此处 */
+export const DEFAULT_MODEL = "claude-sonnet-4-20250514";
+
 /**
  * 默认配置
  */
 export const DEFAULT_CONFIG: Omit<AppConfig, "apiKey"> = {
-  model: "claude-sonnet-4-20250514",
+  model: DEFAULT_MODEL,
   maxTokens: 16384,
   permissionMode: "default",
   cwd: process.cwd(),

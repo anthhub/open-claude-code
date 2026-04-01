@@ -16,6 +16,7 @@ import {
   isToolUseBlock,
   isTextBlock,
   toolToAPIFormat,
+  DEFAULT_MODEL,
   DEFAULT_CONFIG,
 } from "./types/index.js";
 
