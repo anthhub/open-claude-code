@@ -34,13 +34,13 @@ Understanding its source is a masterclass in building production-grade AI applic
 | 2 | [CLI Entrypoint & Startup](docs/en/02-cli-entrypoint.md) | Beginner | Commander.js, startup optimization, parallel prefetch |
 | 3 | [Tool System](docs/en/03-tool-system.md) | Intermediate | Tool interface, registration, execution flow |
 | 4 | [Command System](docs/en/04-command-system.md) | Intermediate | Slash commands, registration, conditional loading |
-| 5 | [Terminal UI with Ink](docs/en/05-terminal-ui.md) | Intermediate | React/Ink, layout engine, DOM model |
+| 5 | [Terminal UI with Ink](docs/en/05-ink-rendering.md) | Intermediate | React/Ink, layout engine, DOM model |
 | 6 | [Service Layer & API Communication](docs/en/06-service-layer.md) | Intermediate | API client, streaming, token tracking |
 | 7 | [Permission System](docs/en/07-permission-system.md) | Intermediate | Permission modes, approval flow, security |
 | 8 | [MCP Integration](docs/en/08-mcp-integration.md) | Advanced | MCP protocol, server management, tool bridging |
 | 9 | [Agent & Multi-Agent Coordination](docs/en/09-agent-coordination.md) | Advanced | Sub-agents, teams, coordinator, swarm |
 | 10 | [Plugin & Skill System](docs/en/10-plugin-skill-system.md) | Advanced | Plugin loading, skill definition, extensibility |
-| 11 | [State Management & Context](docs/en/11-state-management.md) | Advanced | State store, context compression, memory |
+| 11 | [State Management & Context](docs/en/11-state-context.md) | Advanced | State store, context compression, memory |
 | 12 | [Advanced Features](docs/en/12-advanced-features.md) | Expert | Sandbox, voice, bridge/IDE, remote execution |
 
 ---
@@ -63,7 +63,7 @@ Understanding its source is a masterclass in building production-grade AI applic
 - **[04 - Command System](docs/en/04-command-system.md)**
   Slash commands (`/help`, `/clear`, `/mcp`) are the user-facing control plane. Learn registration, conditional loading, and how commands differ from tools.
 
-- **[05 - Terminal UI with Ink](docs/en/05-terminal-ui.md)**
+- **[05 - Terminal UI with Ink](docs/en/05-ink-rendering.md)**
   React for the terminal — a surprisingly powerful paradigm. Learn how Ink's DOM model, layout engine, and reconciler enable a responsive TUI.
 
 - **[06 - Service Layer & API Communication](docs/en/06-service-layer.md)**
@@ -83,7 +83,7 @@ Understanding its source is a masterclass in building production-grade AI applic
 - **[10 - Plugin & Skill System](docs/en/10-plugin-skill-system.md)**
   Extensibility without forking. How plugins are loaded, how skills are defined, and how the system resolves conflicts.
 
-- **[11 - State Management & Context](docs/en/11-state-management.md)**
+- **[11 - State Management & Context](docs/en/11-state-context.md)**
   Long conversations require smart state. Learn the store design, context compression strategies, and the persistent memory system.
 
 - **[12 - Advanced Features](docs/en/12-advanced-features.md)**
@@ -137,7 +137,7 @@ No prior knowledge of Claude or Anthropic's APIs is required — we explain ever
 
 ```bash
 # Clone this repo
-git clone https://github.com/your-org/learn-claude-code.git
+git clone https://github.com/anthhub/learn-claude-code.git
 cd learn-claude-code
 
 # Install dev dependencies

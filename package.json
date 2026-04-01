@@ -6,11 +6,26 @@
   "scripts": {
     "example": "bun run",
     "ch1:structure": "bun run examples/01-overview/project-structure.ts",
-    "ch1:deps": "bun run examples/01-overview/dependency-graph.ts"
+    "ch1:deps": "bun run examples/01-overview/dependency-graph.ts",
+    "ch2:cli": "bun run examples/02-cli-entrypoint/simple-cli.ts",
+    "ch3:interface": "bun run examples/03-tool-system/tool-interface.ts",
+    "ch3:tool": "bun run examples/03-tool-system/simple-tool.ts",
+    "ch3:registry": "bun run examples/03-tool-system/tool-registry.ts",
+    "ch4:command": "bun run examples/04-command-system/slash-command.ts",
+    "ch5:hello": "bun run examples/05-ink-rendering/hello-ink.tsx",
+    "ch5:interactive": "bun run examples/05-ink-rendering/interactive-ui.tsx",
+    "ch6:streaming": "bun run examples/06-service-layer/streaming-api.ts",
+    "ch7:permission": "bun run examples/07-permission-system/permission-check.ts",
+    "ch8:mcp": "bun run examples/08-mcp-integration/mcp-client.ts",
+    "ch9:agent": "bun run examples/09-agent-coordination/multi-agent.ts",
+    "ch10:skill": "bun run examples/10-plugin-skill-system/custom-skill.ts",
+    "ch11:context": "bun run examples/11-state-context/context-manager.ts",
+    "ch12:sandbox": "bun run examples/12-advanced-features/sandbox.ts"
   },
   "keywords": ["claude-code", "anthropic", "cli", "architecture", "learning"],
   "license": "MIT",
   "devDependencies": {
+    "@types/bun": "^1.3.11",
     "typescript": "^5.7.0"
   },
   "dependencies": {
