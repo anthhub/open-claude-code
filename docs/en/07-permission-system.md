@@ -16,6 +16,7 @@
 8. [Sandbox Integration](#8-sandbox-integration)
 9. [Hands-on: Build a Permission System](#9-hands-on-build-a-permission-system)
 10. [Key Takeaways & What's Next](#10-key-takeaways--whats-next)
+11. [Hands-on Build: Permission Check Integration](#hands-on-build-permission-check-integration)
 
 ---
 
@@ -579,6 +580,114 @@ Every `ask` result carries a `decisionReason` explaining *why* the tool needs ap
 
 - **Chapter 8: MCP Integration** — How Claude Code connects to Model Context Protocol servers, and how MCP tool permissions interact with the native permission system
 - **Chapter 9: Agent Coordination** — How the `bubble` permission mode works in multi-agent hierarchies, and how swarm workers handle headless permission requests
+
+---
+
+## Hands-on Build: Permission Check Integration
+
+> **This section marks another significant upgrade to the demo.** We add `utils/permissions.ts` — a permission check module — and integrate it into the tool execution flow in `query.ts`, enabling mini-claude to intercept or prompt before executing dangerous operations.
+
+### Project Structure Update
+
+```
+demo/
+├── utils/
+│   ├── messages.ts      # Chapter 4
+│   └── permissions.ts   # ← New: permission check implementation
+├── query.ts             # Updated: permission check integration
+├── tools/
+│   ├── BashTool/
+│   ├── FileReadTool/
+│   ├── FileWriteTool/
+│   ├── FileEditTool/
+│   ├── GrepTool/
+│   └── GlobTool/
+├── main.ts
+├── Tool.ts
+├── context.ts
+├── services/api/
+└── types/
+```
+
+### utils/permissions.ts Walkthrough
+
+The permission check module implements the core decision flow of Claude Code's permission system:
+
+```
+Tool call → Iterate rules → First matching rule determines behavior
+  ↓              ↓              ↓
+  allow       deny          ask
+  (execute)  (reject+feedback to AI)  (prompt user)
+```
+
+**Default rule hierarchy:**
+
+1. Read-only tools (Read, Grep, Glob) → always `allow`
+2. Dangerous command patterns (`rm -rf`, `mkfs`, `dd if=`, etc.) → always `deny`
+3. Write operations (Bash, Write, Edit) → `ask`
+
+These three layers embody Claude Code's core security philosophy: **read-only operations pass freely, dangerous commands are firmly rejected, write operations are left to the user's judgment**.
+
+### Three Permission Modes
+
+| Mode | Behavior |
+|------|----------|
+| `default` | Strict rule execution — read-only allow, dangerous deny, writes ask |
+| `auto` | Read-only operations auto-approve, writes still require confirmation (simplified `acceptEdits`) |
+| `bypassPermissions` | Skip all checks (development/debugging only, never use in production) |
+
+The real Claude Code has 7 modes (see Section 2 of this chapter); the demo simplifies to 3 to focus on core logic.
+
+### Integration with query.ts
+
+`checkPermission` is passed as an optional callback into `query()`, via a new field in `QueryOptions`:
+
+```typescript
+export interface QueryOptions {
+  // ...existing fields
+  checkPermission?: (toolName: string, input: Record<string, unknown>) => Promise<PermissionResult>;
+}
+```
+
+The integration point is before tool execution — after the Agentic Loop receives tool calls, it checks permissions first:
+
+- **allow** → execute the tool normally
+- **deny** → skip tool execution and return an error message to the AI (e.g., `"Permission denied: rm -rf is blocked by safety rules"`), which lets the AI adjust its strategy
+- **ask** → log and proceed (the current demo has no interactive UI; Chapter 8's REPL will display a confirmation dialog, implementing true interactive user confirmation)
+
+If no `checkPermission` callback is provided, behavior is identical to before — all tools execute unconditionally. This ensures backward compatibility.
+
+### Running the Demo
+
+```bash
+cd demo && bun run main.ts
+```
+
+Try these interactions to verify the permission system:
+
+```
+you> delete all files in the current directory
+# AI attempts rm -rf → denied → AI receives error and adjusts strategy
+
+you> read package.json
+# Read is a read-only tool → allowed directly, no confirmation needed
+
+you> create a test.txt file
+# Write is a write operation → ask → permission check info logged
+```
+
+### Mapping to Real Claude Code
+
+| Demo File | Real File | What's Simplified |
+|-----------|-----------|-------------------|
+| `utils/permissions.ts` | `src/utils/permissions/permissions.ts` | No multi-source rule priority, no wildcard matching engine |
+| `utils/permissions.ts` dangerous patterns | `src/utils/permissions/dangerousPatterns.ts` | Hardcoded few patterns, no tree-sitter AST analysis |
+| `utils/permissions.ts` mode switching | `src/utils/permissions/PermissionMode.ts` | 3 modes vs 7 modes |
+| `query.ts` (permission callback) | `src/hooks/toolPermission/` | No resolve-once racing, no classifier, no bridge |
+
+### What's Next
+
+Chapter 8 will implement an interactive terminal UI (React + Ink), including user input, message rendering, and permission confirmation dialogs. At that point, the `ask` permission will display a real dialog letting users choose "Allow" or "Deny", rather than merely logging.
 
 ---
 

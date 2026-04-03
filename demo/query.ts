@@ -10,7 +10,7 @@
  * 或达到最大轮次限制。
  */
 
-import type { Message, ContentBlock, ToolUseBlock } from "./types/index.js";
+import type { Message, ContentBlock, ToolUseBlock, CheckPermissionFn } from "./types/index.js";
 import { createClient, streamMessage } from "./services/api/claude.js";
 import { buildSystemPrompt } from "./context.js";
 import { allTools, findToolByName, getToolsForAPI } from "./tools.js";
@@ -35,6 +35,8 @@ export interface QueryOptions {
   onToolUse?: (name: string, input: Record<string, unknown>) => void;
   /** 工具结果回调 */
   onToolResult?: (name: string, result: string, isError: boolean) => void;
+  /** 权限检查函数（可选，不提供则跳过权限检查） */
+  checkPermission?: CheckPermissionFn;
 }
 
 /** 查询结果 */
@@ -74,6 +76,7 @@ export async function query(
     onText,
     onToolUse,
     onToolResult,
+    checkPermission,
   } = options;
 
   const client = createClient(apiKey);
@@ -200,6 +203,17 @@ export async function query(
     if (readOnlyTools.length > 0) {
       const results = await Promise.all(
         readOnlyTools.map(async (tu) => {
+          // 权限检查
+          if (checkPermission) {
+            const decision = await checkPermission(tu.name, tu.input);
+            if (decision.behavior === "deny") {
+              return createToolResultBlock(tu.id, `Permission denied: ${decision.message}`, true);
+            }
+            if (decision.behavior === "ask") {
+              // 在 CLI 环境中，默认允许（第 8 章的 REPL 才会真正弹出确认框）
+              onToolUse?.(`[权限: ${decision.message}] ${tu.name}`, tu.input);
+            }
+          }
           const tool = findToolByName(tu.name);
           if (!tool) {
             return createToolResultBlock(tu.id, `Error: Unknown tool '${tu.name}'`, true);
@@ -214,6 +228,20 @@ export async function query(
 
     // 串行执行读写工具
     for (const tu of writeTools) {
+      // 权限检查
+      if (checkPermission) {
+        const decision = await checkPermission(tu.name, tu.input);
+        if (decision.behavior === "deny") {
+          toolResultBlocks.push(
+            createToolResultBlock(tu.id, `Permission denied: ${decision.message}`, true)
+          );
+          continue;
+        }
+        if (decision.behavior === "ask") {
+          // 在 CLI 环境中，默认允许（第 8 章的 REPL 才会真正弹出确认框）
+          onToolUse?.(`[权限: ${decision.message}] ${tu.name}`, tu.input);
+        }
+      }
       const tool = findToolByName(tu.name);
       if (!tool) {
         toolResultBlocks.push(

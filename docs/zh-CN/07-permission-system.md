@@ -16,6 +16,7 @@
 8. [沙箱集成](#8-沙箱集成)
 9. [动手实践：构建权限系统](#9-动手实践构建权限系统)
 10. [核心要点与后续章节](#10-核心要点与后续章节)
+11. [动手构建：权限检查集成](#动手构建权限检查集成)
 
 ---
 
@@ -579,6 +580,114 @@ Claude Code 的权限系统有三个独立的层次：
 
 - **第 8 章：MCP 集成**——Claude Code 如何连接到模型上下文协议服务器，以及 MCP 工具权限如何与原生权限系统交互
 - **第 9 章：代理协调**——`bubble` 权限模式在多代理层次结构中的工作原理，以及 swarm worker 如何处理无头权限请求
+
+---
+
+## 动手构建：权限检查集成
+
+> **本节是 demo 的又一次重要升级。** 我们新增 `utils/permissions.ts` 权限检查模块，并将其集成到 `query.ts` 的工具执行流程中，让 mini-claude 在执行危险操作前能够拦截或询问用户。
+
+### 项目结构更新
+
+```
+demo/
+├── utils/
+│   ├── messages.ts      # 第 4 章
+│   └── permissions.ts   # ← 新增：权限检查实现
+├── query.ts             # 更新：集成权限检查
+├── tools/
+│   ├── BashTool/
+│   ├── FileReadTool/
+│   ├── FileWriteTool/
+│   ├── FileEditTool/
+│   ├── GrepTool/
+│   └── GlobTool/
+├── main.ts
+├── Tool.ts
+├── context.ts
+├── services/api/
+└── types/
+```
+
+### utils/permissions.ts 讲解
+
+权限检查模块实现了 Claude Code 权限系统的核心决策流程：
+
+```
+工具调用 → 遍历规则 → 第一个匹配的规则决定行为
+  ↓              ↓              ↓
+  allow       deny          ask
+  (执行)     (拒绝+反馈AI)   (询问用户)
+```
+
+**默认规则层次：**
+
+1. 只读工具（Read、Grep、Glob）→ 始终 `allow`
+2. 危险命令模式（`rm -rf`、`mkfs`、`dd if=` 等）→ 始终 `deny`
+3. 写操作（Bash、Write、Edit）→ `ask`
+
+这三层规则体现了 Claude Code 的核心安全哲学：**只读安全放行，危险坚决拒绝，写操作交给用户决定**。
+
+### 三种权限模式
+
+| 模式 | 行为 |
+|------|------|
+| `default` | 严格按规则执行——只读 allow，危险 deny，写操作 ask |
+| `auto` | 只读操作自动放行，写操作仍需确认（简化版 `acceptEdits`） |
+| `bypassPermissions` | 跳过所有检查（仅限开发调试，生产环境切勿使用） |
+
+在真实 Claude Code 中有 7 种模式（见本章第 2 节），demo 简化为 3 种以聚焦核心逻辑。
+
+### 与 query.ts 的集成
+
+`checkPermission` 作为可选回调传入 `query()`，在 `QueryOptions` 中新增：
+
+```typescript
+export interface QueryOptions {
+  // ...已有字段
+  checkPermission?: (toolName: string, input: Record<string, unknown>) => Promise<PermissionResult>;
+}
+```
+
+集成点在工具执行前——Agentic Loop 每次拿到工具调用后，先检查权限：
+
+- **allow** → 正常执行工具
+- **deny** → 跳过工具执行，直接返回错误消息给 AI（如 `"Permission denied: rm -rf is blocked by safety rules"`），AI 会据此调整策略
+- **ask** → 记录日志并放行（当前 demo 无交互式 UI；第 8 章的 REPL 会弹出确认对话框，实现真正的用户交互确认）
+
+如果未传入 `checkPermission` 回调，行为与之前完全一致——所有工具无条件执行。这保证了向后兼容。
+
+### 运行验证
+
+```bash
+cd demo && bun run main.ts
+```
+
+尝试以下交互来验证权限系统：
+
+```
+你> 删除当前目录下所有文件
+# AI 尝试 rm -rf → 被 deny → AI 收到错误并调整策略
+
+你> 读取 package.json
+# Read 是只读工具 → 直接 allow，无需确认
+
+你> 创建一个 test.txt 文件
+# Write 是写操作 → ask → 日志输出权限检查信息
+```
+
+### 与真实 Claude Code 的对应关系
+
+| Demo 文件 | 真实文件 | 简化了什么 |
+|-----------|---------|-----------|
+| `utils/permissions.ts` | `src/utils/permissions/permissions.ts` | 无多来源规则优先级、无通配符匹配引擎 |
+| `utils/permissions.ts` 危险模式 | `src/utils/permissions/dangerousPatterns.ts` | 硬编码少量模式，无 tree-sitter AST 分析 |
+| `utils/permissions.ts` 模式切换 | `src/utils/permissions/PermissionMode.ts` | 3 种模式 vs 7 种模式 |
+| `query.ts`（权限回调） | `src/hooks/toolPermission/` | 无 resolve-once 竞争、无分类器、无 bridge |
+
+### 下一章预告
+
+第 8 章将实现交互式终端 UI（React + Ink），包括用户输入、消息渲染、权限确认对话框。届时 `ask` 权限将真正弹出对话框让用户选择"允许"或"拒绝"，而不是仅仅记录日志。
 
 ---
 
