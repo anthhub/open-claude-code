@@ -703,4 +703,99 @@ Spinner 更新         | O(spinner cells) — 其余 blit
 
 ---
 
+## 动手构建：独立工具模块
+
+> **本节是 demo 的又一次重要升级。** 我们将三个内联工具定义拆分为独立目录模块，使架构更贴近真实 Claude Code 的 40+ 工具组织方式。
+
+### 12.1 项目结构更新
+
+```
+demo/
+├── tools/
+│   ├── BashTool/
+│   │   └── index.ts       # ← 新增：增强版 Shell 执行
+│   ├── FileReadTool/
+│   │   └── index.ts       # ← 新增：增强版文件读取
+│   └── GrepTool/
+│       └── index.ts       # ← 新增：增强版代码搜索
+├── tools.ts               # 更新：从独立模块导入
+├── query.ts               # 第 4 章
+├── main.ts
+├── Tool.ts
+├── context.ts
+├── services/api/
+├── utils/
+│   └── messages.ts
+└── types/
+```
+
+### 12.2 为什么要拆分为独立模块？
+
+在前几章中，所有工具定义都内联在 `tools.ts` 里。这对入门来说足够了，但随着工具数量增长，问题逐渐暴露：
+
+- **每个工具是自包含单元** —— 实现逻辑、描述文本、参数 Schema 全部收敛在一个目录下，职责清晰
+- **真实 Claude Code 的组织方式** —— 40+ 工具全部采用独立目录（`src/tools/BashTool/`、`src/tools/FileReadTool/` 等），不是偶然选择
+- **便于独立开发、测试、维护** —— 修改一个工具不会影响其他工具的代码
+- **新增工具只需创建新目录 + 在 tools.ts 中注册** —— 遵循开闭原则
+
+### 12.3 三个工具的增强点
+
+| 工具 | 原始版（Ch2） | 增强版（Ch5） |
+|------|-------------|-------------|
+| BashTool | 基本 Shell 执行 | +超时控制 +输出截断 +环境变量传递 |
+| FileReadTool | 全文读取 | +行号显示 +offset/limit 分段读取 +文件存在检测 |
+| GrepTool | 基本文本搜索 | +文件类型过滤 +结果数量限制 |
+
+每个增强都对应真实 Claude Code 中的实际能力。例如 FileReadTool 的 offset/limit 机制与真实 `Read` 工具完全一致——当文件过大时，模型可以分段读取而非一次加载全部内容。
+
+### 12.4 自包含工具模式
+
+新增工具只需 3 步：
+
+```typescript
+// 1. 创建 tools/MyTool/index.ts
+// 2. 使用 buildTool() 定义工具
+import { buildTool } from '../Tool.js'
+
+export const myTool = buildTool({
+  name: 'MyTool',
+  description: '工具描述',
+  schema: { /* Zod schema */ },
+  isReadOnly: () => true,
+  async execute(input) {
+    // 实现逻辑
+    return { output: '结果' }
+  },
+})
+
+// 3. 在 tools.ts 中注册
+import { myTool } from './tools/MyTool/index.js'
+export const tools = [bashTool, fileReadTool, grepTool, myTool]
+```
+
+这个模式与真实 Claude Code 中 `src/tools/` 下每个工具的组织方式完全对应。
+
+### 12.5 运行验证
+
+```bash
+cd demo && bun run main.ts
+```
+
+工具注册表输出应显示三个独立模块导入的工具，功能与之前相同，但代码组织更加清晰。
+
+### 12.6 与真实 Claude Code 的对应关系
+
+| Demo 文件 | 真实文件 | 简化了什么 |
+|-----------|---------|-----------|
+| `tools/BashTool/index.ts` | `src/tools/BashTool/` | 无沙箱、无权限检查、无 pty |
+| `tools/FileReadTool/index.ts` | `src/tools/FileReadTool/` | 无图片/PDF 支持、无 token 估算 |
+| `tools/GrepTool/index.ts` | `src/tools/GrepTool/` | 无 ripgrep 集成、无上下文行 |
+| `tools.ts`（导入注册） | `src/tools.ts` | 无懒加载、无功能标志过滤 |
+
+### 下一章预告
+
+第 6 章将添加 FileWriteTool、FileEditTool、GlobTool，让 mini-claude 拥有完整的文件操作能力。
+
+---
+
 *本章中的源码引用指向 `anthhub-claude-code`（带注释的 fork）。行号引用 `src/` 中的编译输出。*

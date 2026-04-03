@@ -703,4 +703,99 @@ Scroll (DECSTBM)       | O(changed rows) — hardware shift
 
 ---
 
+## Hands-on Build: Standalone Tool Modules
+
+> **This section is another major upgrade to the demo.** We extract three inline tool definitions into standalone directory modules, aligning the architecture with how real Claude Code organizes its 40+ tools.
+
+### 12.1 Project Structure Update
+
+```
+demo/
+├── tools/
+│   ├── BashTool/
+│   │   └── index.ts       # ← New: enhanced shell execution
+│   ├── FileReadTool/
+│   │   └── index.ts       # ← New: enhanced file reading
+│   └── GrepTool/
+│       └── index.ts       # ← New: enhanced code search
+├── tools.ts               # Updated: imports from standalone modules
+├── query.ts               # Chapter 4
+├── main.ts
+├── Tool.ts
+├── context.ts
+├── services/api/
+├── utils/
+│   └── messages.ts
+└── types/
+```
+
+### 12.2 Why Split into Standalone Modules?
+
+In previous chapters, all tool definitions were inline in `tools.ts`. That works for getting started, but problems emerge as the tool count grows:
+
+- **Each tool is a self-contained unit** — implementation, description, and parameter schema all live in one directory with clear responsibility boundaries
+- **How real Claude Code is organized** — all 40+ tools use standalone directories (`src/tools/BashTool/`, `src/tools/FileReadTool/`, etc.) — this is not accidental
+- **Independent development, testing, and maintenance** — modifying one tool doesn't touch other tools' code
+- **Adding a new tool requires only a new directory + registration in tools.ts** — following the open-closed principle
+
+### 12.3 Enhancement Summary
+
+| Tool | Original (Ch2) | Enhanced (Ch5) |
+|------|----------------|----------------|
+| BashTool | Basic shell execution | +timeout control +output truncation +environment variables |
+| FileReadTool | Full file read | +line numbers +offset/limit +file existence detection |
+| GrepTool | Basic text search | +file type filtering +result limiting |
+
+Each enhancement corresponds to real capabilities in Claude Code. For example, FileReadTool's offset/limit mechanism matches the real `Read` tool exactly — when a file is too large, the model can read it in segments rather than loading everything at once.
+
+### 12.4 Self-Contained Tool Pattern
+
+Adding a new tool takes just 3 steps:
+
+```typescript
+// 1. Create tools/MyTool/index.ts
+// 2. Define the tool using buildTool()
+import { buildTool } from '../Tool.js'
+
+export const myTool = buildTool({
+  name: 'MyTool',
+  description: 'Tool description',
+  schema: { /* Zod schema */ },
+  isReadOnly: () => true,
+  async execute(input) {
+    // Implementation
+    return { output: 'result' }
+  },
+})
+
+// 3. Register in tools.ts
+import { myTool } from './tools/MyTool/index.js'
+export const tools = [bashTool, fileReadTool, grepTool, myTool]
+```
+
+This pattern directly mirrors how each tool under `src/tools/` is organized in real Claude Code.
+
+### 12.5 Running the Demo
+
+```bash
+cd demo && bun run main.ts
+```
+
+The tool registry output should show three tools imported from standalone modules. Functionality is identical to before, but the code organization is significantly cleaner.
+
+### 12.6 Mapping to Real Claude Code
+
+| Demo File | Real File | What's Simplified |
+|-----------|-----------|-------------------|
+| `tools/BashTool/index.ts` | `src/tools/BashTool/` | No sandbox, no permission checks, no pty |
+| `tools/FileReadTool/index.ts` | `src/tools/FileReadTool/` | No image/PDF support, no token estimation |
+| `tools/GrepTool/index.ts` | `src/tools/GrepTool/` | No ripgrep integration, no context lines |
+| `tools.ts` (import & register) | `src/tools.ts` | No lazy loading, no feature flag filtering |
+
+### What's Next
+
+Chapter 6 will add FileWriteTool, FileEditTool, and GlobTool, giving mini-claude complete file operation capabilities.
+
+---
+
 *Source references in this chapter are to `anthhub-claude-code` (the annotated fork). Line numbers reference the compiled output in `src/`.*
