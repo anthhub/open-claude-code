@@ -1,134 +1,107 @@
-# Learn Claude Code
+<div align="center">
 
-> A hands-on guide to understanding Claude Code's architecture and implementation
+# Open Claude Code
 
+### Build a Claude Code Clone from Scratch — in 12 Chapters
+
+> The only tutorial that reverse-engineers Claude Code's real 512K+ line source code into a working AI coding assistant you build yourself.
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?repo=anthhub/open-claude-code)
+
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue?logo=typescript)](https://www.typescriptlang.org/)
+[![Bun](https://img.shields.io/badge/Bun-latest-orange?logo=bun)](https://bun.sh/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
-[![Bun](https://img.shields.io/badge/Bun-latest-orange.svg)](https://bun.sh/)
+[![Docs](https://img.shields.io/badge/Docs-GitHub%20Pages-blue)](https://anthhub.github.io/open-claude-code/)
 
-[中文版](README.zh-CN.md)
+[中文](README.zh-CN.md) · [Documentation](https://anthhub.github.io/open-claude-code/) · [Codespaces](https://github.com/codespaces/new?repo=anthhub/open-claude-code)
 
----
-
-## What is this?
-
-**Learn Claude Code** is a progressive, example-driven study of the Claude Code source snapshot (~1,900 files, 512K+ lines of TypeScript). Rather than just reading documentation, you'll navigate real production code — a sophisticated AI coding assistant — and understand the architectural decisions, patterns, and tradeoffs that make it work.
-
-Claude Code is more than a chatbot wrapper. It's a full-featured terminal application combining:
-- A streaming LLM API client
-- A terminal UI built with React/Ink
-- A dynamic tool and plugin system
-- A multi-agent coordination framework
-- A permission and security model
-- MCP (Model Context Protocol) integration
-
-Understanding its source is a masterclass in building production-grade AI applications.
-
-**Build as you learn.** This isn't just documentation — it's a progressive tutorial. Starting from Chapter 1, you'll build `mini-claude`, a working clone of Claude Code. Each chapter adds a new module to the demo. By Chapter 12, you'll have a fully functional AI coding assistant with tools, permissions, terminal UI, and more.
+</div>
 
 ---
 
-## Learning Roadmap
+## Why This Project?
 
-| # | Chapter | Difficulty | Key Concepts |
-|---|---------|------------|--------------|
-| 1 | [Project Overview & Architecture](docs/en/01-overview.md) | Beginner | Architecture, modules, tech stack |
-| 2 | [CLI Entrypoint & Startup](docs/en/02-cli-entrypoint.md) | Beginner | Commander.js, startup optimization, parallel prefetch |
-| 3 | [Tool System](docs/en/03-tool-system.md) | Intermediate | Tool interface, registration, execution flow |
-| 4 | [Command System](docs/en/04-command-system.md) | Intermediate | Slash commands, registration, conditional loading |
-| 5 | [Terminal UI with Ink](docs/en/05-ink-rendering.md) | Intermediate | React/Ink, layout engine, DOM model |
-| 6 | [Service Layer & API Communication](docs/en/06-service-layer.md) | Intermediate | API client, streaming, token tracking |
-| 7 | [Permission System](docs/en/07-permission-system.md) | Intermediate | Permission modes, approval flow, security |
-| 8 | [MCP Integration](docs/en/08-mcp-integration.md) | Advanced | MCP protocol, server management, tool bridging |
-| 9 | [Agent & Multi-Agent Coordination](docs/en/09-agent-coordination.md) | Advanced | Sub-agents, teams, coordinator, swarm |
-| 10 | [Plugin & Skill System](docs/en/10-plugin-skill-system.md) | Advanced | Plugin loading, skill definition, extensibility |
-| 11 | [State Management & Context](docs/en/11-state-context.md) | Advanced | State store, context compression, memory |
-| 12 | [Advanced Features](docs/en/12-advanced-features.md) | Expert | Sandbox, voice, bridge/IDE, remote execution |
+Most Claude Code tutorials teach you **how to use** it. This one teaches you **how to build** it.
+
+We took the real Claude Code source snapshot (~1,900 files, 512K+ lines of TypeScript), reverse-engineered its architecture, and turned it into a 12-chapter progressive tutorial. By the end, you'll have `mini-claude` — a working AI coding assistant with:
+
+- **Agentic Loop** — AI autonomously calls tools and reasons in a loop
+- **7 Built-in Tools** — Read, Write, Edit, Bash, Grep, Glob, Echo
+- **Streaming API** — Real-time token-by-token output via Anthropic SDK
+- **Permission System** — Dangerous command blocking & approval flow
+- **Interactive Terminal UI** — React + Ink REPL, just like the real thing
+- **CLI with Commander.js** — `--model`, `--prompt`, `--print`
+- **Slash Commands** — `/help`, `/clear`, `/compact`
+- **Session History** — Persistent conversations across runs
+- **Retry & Error Handling** — Exponential backoff, production-grade resilience
+
+Every feature maps 1:1 to real Claude Code architecture. No hand-waving, no toy examples.
 
 ---
 
-## The Demo: mini-claude
+## How It's Different
 
-As you read each chapter, you'll build `mini-claude` — a working AI coding assistant that mirrors Claude Code's real architecture. The demo lives in the `demo/` directory and grows chapter by chapter.
+| | Other Tutorials | Open Claude Code |
+|---|---|---|
+| **Approach** | "Here's how to use Claude Code" | "Here's how to **BUILD** Claude Code" |
+| **Source** | Generic AI agent concepts | Real 512K+ line source code analysis |
+| **Output** | Knowledge | A working AI coding assistant |
+| **Learning** | Read docs passively | Build chapter by chapter |
+| **Environment** | Static markdown | Codespaces + Jupyter + VitePress |
 
-### Final Architecture
+---
 
-```
-demo/
-├── main.ts                    # CLI entry (Commander.js)
-├── context.ts                 # System prompt builder
-├── query.ts                   # Query loop (stream + tool calls)
-├── Tool.ts                    # Tool interface & factory
-├── tools.ts                   # Tool registry
-├── types/
-│   ├── message.ts             # Message types
-│   └── permissions.ts         # Permission types
-├── tools/
-│   ├── BashTool/
-│   ├── FileReadTool/
-│   ├── FileWriteTool/
-│   ├── FileEditTool/
-│   ├── GrepTool/
-│   ├── GlobTool/
-│   └── TodoWriteTool/
-├── services/
-│   ├── api/claude.ts          # Anthropic SDK wrapper
-│   └── compact/compact.ts     # Context compression
-├── screens/REPL.tsx           # Terminal UI (Ink)
-├── components/
-│   ├── App.tsx
-│   ├── MessageList.tsx
-│   └── PermissionRequest.tsx
-├── commands/
-│   ├── clear.ts
-│   ├── help.ts
-│   └── compact.ts
-└── utils/
-    ├── permissions.ts
-    ├── messages.ts
-    ├── format.ts
-    └── config.ts
+## Quick Start
+
+### Option 1: One-Click Cloud Environment
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?repo=anthhub/open-claude-code)
+
+Zero setup. Start building in your browser.
+
+### Option 2: Local Setup
+
+```bash
+git clone https://github.com/anthhub/open-claude-code.git
+cd open-claude-code/demo
+bun install
+bun run demo                              # Script-mode verification
+ANTHROPIC_API_KEY=sk-xxx bun run start    # Interactive REPL
 ```
 
-### What You Build Each Chapter
+Then open [Chapter 1](docs/en/01-overview.md) and start building.
 
-| Ch | Module Added | Demo Capability After |
-|----|-------------|----------------------|
-| 1 | Project scaffold + type system | Type definitions compile |
-| 2 | Tool.ts + tools.ts | Tool interface & registry |
-| 3 | services/api/ + context.ts | Streaming API calls |
-| 4 | query.ts + utils/messages.ts | Multi-turn tool-calling loop |
-| 5 | tools/BashTool, FileReadTool, GrepTool | Execute commands, read files, search |
-| 6 | tools/FileWriteTool, FileEditTool, GlobTool | Full file operations |
-| 7 | utils/permissions.ts | Dangerous command blocking |
-| 8 | screens/REPL.tsx + components/ | Interactive terminal UI |
-| 9 | main.ts (Commander.js) | Full CLI with args |
-| 10 | commands/ + compact service | /help, /clear, /compact |
-| 11 | components/PermissionRequest.tsx | Interactive permission dialogs |
-| 12 | History, retry, error handling | Production-ready demo |
+---
+
+## 12-Chapter Learning Roadmap
+
+| # | Chapter | Difficulty | Key Concepts | Status |
+|---|---------|------------|--------------|--------|
+| 1 | [Project Overview & Architecture](docs/en/01-overview.md) | Beginner | Architecture, modules, tech stack | ✅ |
+| 2 | [CLI Entrypoint & Startup](docs/en/02-cli-entrypoint.md) | Beginner | Commander.js, startup optimization, parallel prefetch | ✅ |
+| 3 | [Tool System](docs/en/03-tool-system.md) | Intermediate | Tool interface, registration, execution flow | ✅ |
+| 4 | [Command System](docs/en/04-command-system.md) | Intermediate | Slash commands, registration, conditional loading | ✅ |
+| 5 | [Terminal UI with Ink](docs/en/05-ink-rendering.md) | Intermediate | React/Ink, layout engine, DOM model | ✅ |
+| 6 | [Service Layer & API Communication](docs/en/06-service-layer.md) | Intermediate | API client, streaming, token tracking | ✅ |
+| 7 | [Permission System](docs/en/07-permission-system.md) | Intermediate | Permission modes, approval flow, security | ✅ |
+| 8 | [MCP Integration](docs/en/08-mcp-integration.md) | Advanced | MCP protocol, server management, tool bridging | ✅ |
+| 9 | [Agent & Multi-Agent Coordination](docs/en/09-agent-coordination.md) | Advanced | Sub-agents, teams, coordinator, swarm | ✅ |
+| 10 | [Plugin & Skill System](docs/en/10-plugin-skill-system.md) | Advanced | Plugin loading, skill definition, extensibility | ✅ |
+| 11 | [State Management & Context](docs/en/11-state-context.md) | Advanced | State store, context compression, memory | ✅ |
+| 12 | [Advanced Features](docs/en/12-advanced-features.md) | Expert | Sandbox, voice, bridge/IDE, remote execution | ✅ |
 
 ### Key Milestones
 
-- **After Chapter 2**: Tools can actually execute shell commands and read files
-- **After Chapter 4**: Complete Agentic Loop — AI automatically calls tools and reasons in a loop
-- **After Chapter 8**: Interactive terminal UI, experience close to real Claude Code
-- **After Chapter 12**: Fully functional AI coding assistant
-
-### Architecture Correspondence
-
-| Demo File | Real Claude Code Equivalent |
-|-----------|----------------------------|
-| `Tool.ts` | `src/Tool.ts` |
-| `tools.ts` | `src/tools/index.ts` |
-| `query.ts` | `src/query.ts` |
-| `context.ts` | `src/context.ts` |
-| `services/api/claude.ts` | `src/services/claude.ts` |
-| `screens/REPL.tsx` | `src/screens/REPL.tsx` |
-| `utils/permissions.ts` | `src/utils/permissions.ts` |
+| After Chapter | What You Can Do |
+|---------------|----------------|
+| **Chapter 2** | Tools execute shell commands and read files |
+| **Chapter 4** | Complete Agentic Loop — AI automatically calls tools and reasons in a loop |
+| **Chapter 8** | Interactive terminal UI, experience close to real Claude Code |
+| **Chapter 12** | Fully functional AI coding assistant |
 
 ---
 
-## Chapters
+## Chapter Details
 
 ### Foundation (Chapters 1-2)
 
@@ -174,6 +147,78 @@ demo/
 
 ---
 
+## What You Build Each Chapter
+
+| Ch | Module Added | Demo Capability After |
+|----|-------------|----------------------|
+| 1 | Project scaffold + type system | Type definitions compile |
+| 2 | Tool.ts + tools.ts | Tool interface & registry |
+| 3 | services/api/ + context.ts | Streaming API calls |
+| 4 | query.ts + utils/messages.ts | Multi-turn tool-calling loop |
+| 5 | tools/BashTool, FileReadTool, GrepTool | Execute commands, read files, search |
+| 6 | tools/FileWriteTool, FileEditTool, GlobTool | Full file operations |
+| 7 | utils/permissions.ts | Dangerous command blocking |
+| 8 | screens/REPL.tsx + components/ | Interactive terminal UI |
+| 9 | main.ts (Commander.js) | Full CLI with args |
+| 10 | commands/ + compact service | /help, /clear, /compact |
+| 11 | components/PermissionRequest.tsx | Interactive permission dialogs |
+| 12 | History, retry, error handling | Production-ready demo |
+
+---
+
+## Demo: Final Architecture
+
+```
+demo/
+├── main.ts                    # CLI entry (Commander.js)
+├── context.ts                 # System prompt builder
+├── query.ts                   # Query loop (stream + tool calls)
+├── Tool.ts                    # Tool interface & factory
+├── tools.ts                   # Tool registry
+├── types/
+│   ├── message.ts             # Message types
+│   └── permissions.ts         # Permission types
+├── tools/
+│   ├── BashTool/
+│   ├── FileReadTool/
+│   ├── FileWriteTool/
+│   ├── FileEditTool/
+│   ├── GrepTool/
+│   ├── GlobTool/
+│   └── TodoWriteTool/
+├── services/
+│   ├── api/claude.ts          # Anthropic SDK wrapper
+│   └── compact/compact.ts     # Context compression
+├── screens/REPL.tsx           # Terminal UI (Ink)
+├── components/
+│   ├── App.tsx
+│   ├── MessageList.tsx
+│   └── PermissionRequest.tsx
+├── commands/
+│   ├── clear.ts
+│   ├── help.ts
+│   └── compact.ts
+└── utils/
+    ├── permissions.ts
+    ├── messages.ts
+    ├── format.ts
+    └── config.ts
+```
+
+### Architecture Correspondence
+
+| Demo File | Real Claude Code Equivalent |
+|-----------|----------------------------|
+| `Tool.ts` | `src/Tool.ts` |
+| `tools.ts` | `src/tools/index.ts` |
+| `query.ts` | `src/query.ts` |
+| `context.ts` | `src/context.ts` |
+| `services/api/claude.ts` | `src/services/claude.ts` |
+| `screens/REPL.tsx` | `src/screens/REPL.tsx` |
+| `utils/permissions.ts` | `src/utils/permissions.ts` |
+
+---
+
 ## Project Structure
 
 ```
@@ -186,23 +231,9 @@ open-claude-code/
 ├── tsconfig.json
 ├── docs/
 │   ├── en/                 # English chapter docs
-│   │   ├── 01-overview.md
-│   │   ├── 02-cli-entrypoint.md
-│   │   └── ...
-│   └── zh-CN/             # Chinese chapter docs
-│       ├── 01-overview.md
-│       └── ...
-├── examples/
-│   ├── 01-overview/        # Runnable examples per chapter
-│   │   ├── project-structure.ts
-│   │   └── dependency-graph.ts
-│   ├── 02-cli-entrypoint/
-│   └── ...
+│   └── zh-CN/              # Chinese chapter docs
+├── examples/               # Runnable examples per chapter
 ├── demo/                   # mini-claude: the progressive demo you build
-│   ├── main.ts
-│   ├── query.ts
-│   ├── Tool.ts
-│   └── ...
 └── diagrams/               # Architecture diagrams
 ```
 
@@ -210,40 +241,12 @@ open-claude-code/
 
 ## Prerequisites
 
-Before starting, make sure you have:
-
 - **Node.js 18+** — `node --version`
 - **Bun** — [bun.sh](https://bun.sh) (used to run TypeScript examples directly)
 - **TypeScript knowledge** — comfortable reading typed code; generics and decorators appear often
 - **Basic terminal/CLI familiarity** — you'll be reading a CLI app's source
 
 No prior knowledge of Claude or Anthropic's APIs is required — we explain everything from first principles.
-
----
-
-## Getting Started
-
-```bash
-# Clone this repo
-git clone https://github.com/anthhub/open-claude-code.git
-cd open-claude-code
-
-# Install dev dependencies
-bun install
-
-# Run the first example
-bun run ch1:structure
-
-# Or run any example directly
-bun run examples/01-overview/project-structure.ts
-
-# Run the demo (after completing chapters)
-cd demo
-bun install
-bun run main.ts
-```
-
-Then open [docs/en/01-overview.md](docs/en/01-overview.md) and follow along.
 
 ---
 
